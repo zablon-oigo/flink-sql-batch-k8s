@@ -1,5 +1,3 @@
-## Running Flink SQL Batch as a Kubernetes Job
-
 ![Kubernetes](https://img.shields.io/badge/Kubernetes-v1.34+-326CE5?logo=kubernetes&logoColor=white)
 ![Apache Flink](https://img.shields.io/badge/Apache%20Flink-1.20-E6526F?logo=apacheflink&logoColor=white)
 ![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-4.x-231F20?logo=apachekafka&logoColor=white)
@@ -10,13 +8,17 @@
 ![Docker Compose](https://img.shields.io/badge/Docker%20Compose-v2-2496ED?logo=docker&logoColor=white)
 ![Kind](https://img.shields.io/badge/Kind-Local%20Kubernetes-0094F5?logo=kubernetes&logoColor=white)
 
-
-#### Architecture Diagram
-
+## Running Flink SQL Batch as a Kubernetes Job
 
 This project demonstrates how to run a Flink SQL batch job on Kubernetes as a scheduled Kubernetes CronJob.
 
 The example assumes a database table contains transaction data. Every day at 1:00 AM, the Kubernetes CronJob launches a Flink application that processes the previous day's transactions and produces a daily summary to Kafka.
+
+#### Architecture Diagram
+
+<img width="864" height="456" alt="prod excalidraw" src="https://github.com/user-attachments/assets/49b751d8-651a-422c-a1ff-3699ebaa19aa" />
+
+
 
 #### Verify Docker Gateway
 
