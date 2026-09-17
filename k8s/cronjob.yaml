@@ -1,0 +1,64 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: flink-sql-batch
+  namespace: flink
+spec:
+  timeZone: "Africa/Nairobi"
+  schedule: "0 1 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 1
+  failedJobsHistoryLimit: 1
+
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: flink
+          restartPolicy: Never
+
+          containers:
+            - name: flink-launcher
+              image: zablondev/flink-sql-batch:latest
+              imagePullPolicy: Always
+
+              command:
+                - /bin/bash
+                - -c
+
+              args:
+                - |
+                  PROCESSING_DATE=$(date -d "yesterday" +%Y-%m-%d)
+                  CLUSTER_ID="transactions-$(date +%Y%m%d-%H%M%S)"
+
+                  echo "Processing date: ${PROCESSING_DATE}"
+                  echo "Flink cluster: ${CLUSTER_ID}"
+
+                  /opt/flink/bin/flink run-application \
+                    --target kubernetes-application \
+                    -c test.SqlRunner \
+                    -Dkubernetes.namespace=flink \
+                    -Dkubernetes.cluster-id="${CLUSTER_ID}" \
+                    -Dkubernetes.container.image.ref=zablondev/flink-sql-batch:latest \
+                    -Dkubernetes.container.image.pull-policy=Always \
+                    -Dkubernetes.service-account=flink \
+                    -Dkubernetes.pod-template-file.default=/opt/flink/pod-template/pod-template.yaml \
+                    -Dexecution.runtime-mode=BATCH \
+                    -Dexecution.attached=true \
+                    -Dexecution.shutdown-on-application-finish=true \
+                    -Dtaskmanager.numberOfTaskSlots=1 \
+                    -Djobmanager.memory.process.size=1024m \
+                    -Dtaskmanager.memory.process.size=1024m \
+                    local:///opt/flink/usrlib/flink-sql-runner.jar \
+                    /opt/flink/sql/job.sql \
+                    --param PROCESSING_DATE="${PROCESSING_DATE}"
+
+              volumeMounts:
+                - name: pod-template
+                  mountPath: /opt/flink/pod-template
+                  readOnly: true
+
+          volumes:
+            - name: pod-template
+              configMap:
+                name: flink-pod-template
