@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flink-pod-template
+  namespace: flink
+data:
+  pod-template.yaml: |
+    apiVersion: v1
+    kind: Pod
+    metadata:
+      name: flink-pod-template
+    spec:
+      hostAliases:
+        - ip: "172.17.0.1"
+          hostnames:
+            - "host.docker.internal"
+      containers:
+        - name: flink-main-container
+          volumeMounts:
+            - name: sql
+              mountPath: /opt/flink/sql
+              readOnly: true
+      volumes:
+        - name: sql
+          configMap:
+            name: flink-sql-job
