@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: flink-sql-job
+  namespace: flink
+data:
+  job.sql: |
+    CREATE TABLE transactions (
+        transaction_id BIGINT,
+        product_id BIGINT,
+        amount DECIMAL(10, 2),
+        created_tst TIMESTAMP(3)
+    ) WITH (
+        'connector' = 'jdbc',
+        'url' = 'jdbc:postgresql://host.docker.internal:54321/transactions',
+        'table-name' = 'transactions',
+        'username' = 'demo',
+        'password' = 'demo'
+    );
+
+    CREATE TABLE daily_product_summary (
+        product_id BIGINT,
+        transaction_count BIGINT,
+        total_amount DECIMAL(20, 2)
+    ) WITH (
+        'connector' = 'kafka',
+        'topic' = 'daily-product-summary',
+        'properties.bootstrap.servers' = 'host.docker.internal:9092',
+        'format' = 'json'
+    );
+
+    INSERT INTO daily_product_summary
+    SELECT
+        product_id,
+        COUNT(*) AS transaction_count,
+        CAST(SUM(amount) AS DECIMAL(20, 2)) AS total_amount
+    FROM transactions
+    WHERE created_tst >= TIMESTAMP '${PROCESSING_DATE} 00:00:00'
+      AND created_tst < TIMESTAMP '${PROCESSING_DATE} 00:00:00' + INTERVAL '1' DAY
+    GROUP BY product_id;
